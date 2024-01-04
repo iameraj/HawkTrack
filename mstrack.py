@@ -8,6 +8,7 @@ from datetime import datetime, timedelta
 from prettytable import PrettyTable
 import os
 
+
 class HawkTrack:
     def __init__(self):
         self.session_id = None
@@ -99,7 +100,9 @@ class HawkTrack:
         table.field_names = ["Window Name", "Keystrokes Count", "Time Spent"]
 
         for window_name, keystrokes_count in self.keystrokes.items():
-            table.add_row([window_name, keystrokes_count, self.format_time(self.start_time)])
+            table.add_row(
+                [window_name, keystrokes_count, self.format_time(self.start_time)]
+            )
 
         print("Window-wise keystrokes count:")
         print(table)
@@ -108,23 +111,31 @@ class HawkTrack:
         elapsed_time = int(time.time() - start_time)
         return str(timedelta(seconds=elapsed_time))
 
+
 def run_background(hawk_track):
     # This function runs in the background
     while hawk_track.recording:
-        os.system('cls')
+        os.system("cls")
         hawk_track.info_session()
         hawk_track.save_session_info()
         print("session info saved...")
         time.sleep(1)  # Save session info every 6 seconds
+
 
 def monitor_keystrokes(hawk_track):
     keyboard.hook(hawk_track.on_key_event)
     keyboard.wait("esc")  # Wait for the user to press the escape key
     keyboard.unhook_all()
 
+
 def main():
     parser = argparse.ArgumentParser(description="HawkTrack CLI application")
-    parser.add_argument("command", choices=["start", "info", "end"], help="Command to execute", default="start")
+    parser.add_argument(
+        "command",
+        choices=["start", "info", "end"],
+        help="Command to execute",
+        default="start",
+    )
     args = parser.parse_args()
 
     hawk_track = HawkTrack()
@@ -133,7 +144,9 @@ def main():
     if args.command == "start":
         hawk_track.start_session()
         # Run the background thread for saving session info
-        background_thread = threading.Thread(target=run_background, args=(hawk_track,), daemon=True)
+        background_thread = threading.Thread(
+            target=run_background, args=(hawk_track,), daemon=True
+        )
         background_thread.start()
         # Monitor keystrokes in the main thread
         monitor_keystrokes(hawk_track)
@@ -141,6 +154,7 @@ def main():
         hawk_track.info_session()
     elif args.command == "end":
         hawk_track.end_session()
+
 
 if __name__ == "__main__":
     main()
