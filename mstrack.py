@@ -63,10 +63,19 @@ class HawkTrack:
     def get_active_window_name(self):
         try:
             active_window = gw.getActiveWindow().title
-            if "Teams" in active_window:
-                return "Teams"
-            if "Keying" in active_window:
-                return "Keying"
+            application_mapping = {
+                "Teams": "Teams",
+                "Visual Studio Code": "Visual Studio Code",
+                "Google Chrome": "Google Chrome",
+                "Keying": "Keying",
+                "Microsoft Edge": "Microsoft Edge"
+            }
+
+            for key, value in application_mapping.items():
+                if key in active_window:
+                    return value
+
+            # If no match found, return the original window title
             return active_window
 
         except Exception as e:
@@ -118,7 +127,7 @@ def run_background(hawk_track):
         hawk_track.info_session()
         hawk_track.save_session_info()
         print("session info saved...")
-        time.sleep(1)  # Save session info every 6 seconds
+        time.sleep(2)  # Save session info every 6 seconds
 
 
 def monitor_keystrokes(hawk_track):
