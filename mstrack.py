@@ -1,4 +1,3 @@
-import argparse
 import threading
 import time
 import json
@@ -129,31 +128,20 @@ def monitor_keystrokes(hawk_track):
 
 
 def main():
-    parser = argparse.ArgumentParser(description="HawkTrack CLI application")
-    parser.add_argument(
-        "command",
-        choices=["start", "info", "end"],
-        help="Command to execute",
-        default="start",
-    )
-    args = parser.parse_args()
-
     hawk_track = HawkTrack()
     hawk_track.load_session_info()
-
-    if args.command == "start":
-        hawk_track.start_session()
-        # Run the background thread for saving session info
-        background_thread = threading.Thread(
-            target=run_background, args=(hawk_track,), daemon=True
+    hawk_track.start_session()
+    
+    background_thread = threading.Thread(
+        target=run_background, args=(hawk_track,), daemon=True
         )
-        background_thread.start()
-        # Monitor keystrokes in the main thread
-        monitor_keystrokes(hawk_track)
-    elif args.command == "info":
-        hawk_track.info_session()
-    elif args.command == "end":
-        hawk_track.end_session()
+    background_thread.start()
+    
+    # Monitor keystrokes in the main thread
+    monitor_keystrokes(hawk_track)
+
+    #hawk_track.info_session()
+    #hawk_track.end_session()
 
 
 if __name__ == "__main__":
