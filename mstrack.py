@@ -30,7 +30,11 @@ class HawkTrack:
                 self.save_session_info()
         else:
             os.system("cls")
-            print("\nYour previous session ",self.session_id, "- UTC-6 has expired starting a new session.\n")
+            print(
+                "\nYour previous session ",
+                self.session_id,
+                "- UTC-6 has expired starting a new session.\n",
+            )
 
             self.session_id = today_date
             self.start_time = time.time()
@@ -47,9 +51,12 @@ class HawkTrack:
                     },
                     file,
                 )
-            print("\nYour session for ",today_date," - Central Time Zone (CT)/UTC-6  has started")
+            print(
+                "\nYour session for ",
+                today_date,
+                " - Central Time Zone (CT)/UTC-6  has started",
+            )
             _ = input("press ENTER To proceed...")
-            
 
     def validate_password(self, password):
         return True
@@ -93,7 +100,7 @@ class HawkTrack:
                 "Visual Studio Code": "Visual Studio Code",
                 "Google Chrome": "Google Chrome",
                 "Keying": "Keying",
-                "Microsoft Edge": "Microsoft Edge"
+                "Microsoft Edge": "Microsoft Edge",
             }
 
             for key, value in application_mapping.items():
@@ -165,17 +172,17 @@ def main():
     hawk_track = HawkTrack()
     hawk_track.load_session_info()
     hawk_track.start_session()
-    
+
     background_thread = threading.Thread(
         target=run_background, args=(hawk_track,), daemon=True
-        )
+    )
     background_thread.start()
-    
+
     # Monitor keystrokes in the main thread
     monitor_keystrokes(hawk_track)
 
-    #hawk_track.info_session()
-    #hawk_track.end_session()
+    # hawk_track.info_session()
+    # hawk_track.end_session()
 
 
 if __name__ == "__main__":
