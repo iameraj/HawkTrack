@@ -6,6 +6,9 @@ import pygetwindow as gw
 from datetime import datetime, timedelta
 from prettytable import PrettyTable
 import os
+import pytz
+
+timezone_obj = pytz.timezone("America/Chicago")
 
 
 class HawkTrack:
@@ -17,14 +20,36 @@ class HawkTrack:
         self.start_time = None
 
     def start_session(self):
-        self.session_id = input("Enter id: ")
-        password = input("Enter password: ")
-        # Validate password and start recording if valid
-        if self.validate_password(password):
-            self.recording = True
+        today_date = datetime.now(timezone_obj).strftime("%d %b %Y")
+        if self.session_id == today_date:
+            password = input("Enter password: ")
+            # Validate password and start recording if valid
+            if self.validate_password(password):
+                self.recording = True
+                print("Session is being recorded...")
+                self.save_session_info()
+        else:
+            os.system("cls")
+            print("\nYour previous session ",self.session_id, "- UTC-6 has expired starting a new session.\n")
+
+            self.session_id = today_date
             self.start_time = time.time()
-            print("Session is being recorded...")
-            self.save_session_info()
+            self.recording = True
+            self.keystrokes = {}
+
+            with open(self.session_file, "w") as file:
+                json.dump(
+                    {
+                        "session_id": self.session_id,
+                        "recording": self.recording,
+                        "start_time": self.start_time,
+                        "keystrokes": self.keystrokes,
+                    },
+                    file,
+                )
+            print("\nYour session for ",today_date," - Central Time Zone (CT)/UTC-6  has started")
+            _ = input("press ENTER To proceed...")
+            
 
     def validate_password(self, password):
         return True
