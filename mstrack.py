@@ -89,11 +89,7 @@ class HawkTrack:
             _ = input("press ENTER To proceed...")
 
     def info_session(self):
-        try:
-            self.display_session_info()
-            self.display_window_info()
-        except:
-            print("")
+        self.display_window_info()
 
     def save_session_info(self):
         session_info = {
@@ -111,6 +107,7 @@ class HawkTrack:
             window_name = self.get_active_window_name()
             if window_name:
                 self.keystrokes[window_name] = self.keystrokes.get(window_name, 0) + 1
+                print("Registered ", event, "for window - ",window_name)
 
     def set_window_duration(self, window_name, duration):
         self.durations[window_name] = self.durations.get(window_name, 0) + duration
@@ -132,6 +129,16 @@ class HawkTrack:
                 "COFA",
                 "Address",
             ]
+            application_mapping = [
+                "Teams",
+                "Google Chrome",
+                "Microsoft Edge",
+                "Sticky",
+            ]
+
+            for window_name in application_mapping:
+                if window_name in active_window:
+                    return "Essentials"
 
             if "Keying" in active_window:
                 for app in keying_applications:
@@ -165,6 +172,7 @@ class HawkTrack:
 
     def display_session_info(self):
         elapsed_time = timedelta(seconds=int(time.time() - self.start_time))
+        os.system("cls")
         print(Style.DIM + f"Session info for {self.session_id}:" + Style.RESET_ALL)
         print(Style.DIM + f"Elapsed Time: {str(elapsed_time)}" + Style.RESET_ALL)
         print("")
@@ -185,22 +193,20 @@ class HawkTrack:
         ]
 
         total_keystrokes_count = 0
-        counter = 0
-        total_time = 0
+        total_time = 1
 
         for window_name, keystrokes_count in self.keystrokes.items():
-            col1 = window_name
-            col2 = keystrokes_count
-            col3 = self.durations.get(window_name, 1)
-            col4 = (keystrokes_count / col3) * 3600
-
-            if col1 != "Others":
+  
+            if window_name not in ["Others", "Essentials"]:
+                col2 = keystrokes_count
+                col3 = self.durations.get(window_name, 1)
+                col4 = (keystrokes_count / col3) * 3600
                 total_keystrokes_count += col2
                 total_time += col3
 
                 table.add_row(
                     [
-                        Style.BRIGHT + col1 + Style.RESET_ALL,
+                        Style.BRIGHT + window_name + Style.RESET_ALL,
                         "{:,}".format(col2),
                         self.format_time(col3),
                         round(col4),
@@ -209,12 +215,12 @@ class HawkTrack:
 
         table.add_row(
             [
-                "Others",
-                self.keystrokes.get("Others", 0),
-                self.format_time(self.durations.get("Others", 1)),
+                "Essentials",
+                self.keystrokes.get("Essentials", 0),
+                self.format_time(self.durations.get("Essentials", 1)),
                 round(
-                    self.keystrokes.get("Others", 0)
-                    / self.durations.get("Others", 1)
+                    self.keystrokes.get("Essentials", 0)
+                    / self.durations.get("Essentials", 1)
                     * 3600
                 ),
             ],
@@ -231,6 +237,7 @@ class HawkTrack:
             ]
         )
         table.set_style(SINGLE_BORDER)
+        self.display_session_info()
         print(table)
 
     def format_time(self, duration):
@@ -256,7 +263,6 @@ def run_background(hawk_track):
     Saves and displays sessions till the application is running
     """
     while True:
-        os.system("cls")
         hawk_track.info_session()
         hawk_track.save_session_info()
         print(Style.DIM + "session info saved...")
