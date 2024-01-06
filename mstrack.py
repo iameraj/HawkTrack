@@ -11,6 +11,7 @@ import pytz
 timezone_obj = pytz.timezone("America/Chicago")
 
 
+
 class HawkTrack:
     def __init__(self):
         self.session_id = None
@@ -73,14 +74,6 @@ class HawkTrack:
         else:
             print("No active session.")
 
-    def end_session(self):
-        if self.recording:
-            self.recording = False
-            self.display_session_info()
-            self.save_session_info()
-        else:
-            print("No active session.")
-
     def save_session_info(self):
         session_info = {
             "session_id": self.session_id,
@@ -93,7 +86,7 @@ class HawkTrack:
             json.dump(session_info, file)
 
     def on_key_event(self, event):
-        if event.event_type == keyboard.KEY_DOWN:
+        if event.event_type == keyboard.KEY_UP:
             window_name = self.get_active_window_name()
             if window_name:
                 self.keystrokes[window_name] = self.keystrokes.get(window_name, 0) + 1
@@ -154,7 +147,7 @@ class HawkTrack:
                 [
                     window_name,
                     keystrokes_count,
-                    self.format_time(self.durations[window_name]),
+                    self.format_time(self.durations.get(window_name,1)),
                 ]
             )
 
@@ -212,7 +205,6 @@ def main():
     monitor_keystrokes(hawk_track)
 
     hawk_track.info_session()
-    hawk_track.end_session()
 
 
 if __name__ == "__main__":
