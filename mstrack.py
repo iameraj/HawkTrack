@@ -11,7 +11,6 @@ import pytz
 timezone_obj = pytz.timezone("America/Chicago")
 
 
-
 class HawkTrack:
     def __init__(self):
         self.session_id = None
@@ -125,8 +124,16 @@ class HawkTrack:
                 self.start_time = session_info.get("start_time")
                 self.keystrokes = session_info.get("keystrokes", {})
                 self.durations = session_info.get("durations", {})
-        except FileNotFoundError:
-            pass  # Ignore if the file is not found
+        except:
+            session_info = {
+                "session_id": self.session_id,
+                "recording": self.recording,
+                "start_time": self.start_time,
+                "keystrokes": self.keystrokes,
+                "durations": self.durations,
+            }
+        with open(self.session_file, "w") as file:
+            json.dump(session_info, file)
 
     def display_session_info(self):
         elapsed_time = timedelta(seconds=int(time.time() - self.start_time))
@@ -147,7 +154,7 @@ class HawkTrack:
                 [
                     window_name,
                     keystrokes_count,
-                    self.format_time(self.durations.get(window_name,1)),
+                    self.format_time(self.durations.get(window_name, 1)),
                 ]
             )
 
