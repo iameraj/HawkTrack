@@ -158,7 +158,7 @@ class HawkTrack:
         if None:
             return 0
         else:
-            return timedelta(seconds=duration)
+            return timedelta(seconds=round(duration))
 
 
 def run_background(hawk_track):
