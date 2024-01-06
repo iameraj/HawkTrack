@@ -21,9 +21,10 @@ class HawkTrack:
         self.start_time = None
 
     def start_session(self):
+        os.system("cls")
         today_date = datetime.now(timezone_obj).strftime("%d %b %Y")
         if self.session_id == today_date:
-            print("Continuing sessions ",self.session_id)
+            print("Continuing sessions ", self.session_id)
             password = input("Enter password: ")
             # Validate password and start recording if valid
             if self.validate_password(password):
@@ -98,7 +99,7 @@ class HawkTrack:
                 self.keystrokes[window_name] = self.keystrokes.get(window_name, 0) + 1
 
     def set_window_duration(self, window_name, duration):
-        self.durations[window_name] = self.durations.get(window_name,0) + duration
+        self.durations[window_name] = self.durations.get(window_name, 0) + duration
 
     def get_active_window_name(self):
         try:
@@ -115,7 +116,7 @@ class HawkTrack:
                 if key in active_window:
                     return value
 
-            # If no match found, return the original window title
+            # If no match found, return the other window title
             return "Other"
 
         except Exception as e:
@@ -150,22 +151,31 @@ class HawkTrack:
 
         for window_name, keystrokes_count in self.keystrokes.items():
             table.add_row(
-                [window_name, keystrokes_count, timedelta(seconds=self.durations.get(window_name))]
+                [
+                    window_name,
+                    keystrokes_count,
+                    self.format_time(self.durations[window_name]),
+                ]
             )
 
         print("Window-wise keystrokes count:")
         print(table)
 
+    def format_time(self, duration):
+        if None:
+            return 0
+        else:
+            return timedelta(seconds=duration)
+
 
 def run_background(hawk_track):
     """
     This function runs in the background
-    to save the session keystrokes info  and 
-    duration info, it also maintains the 
+    to save the session keystrokes info  and
+    duration info, it also maintains the
     time record of each window
     """
     time_start = time.time()
-
 
     active_window = hawk_track.get_active_window_name()
 
@@ -173,13 +183,12 @@ def run_background(hawk_track):
         new_active_window = hawk_track.get_active_window_name()
 
         if new_active_window != active_window:
-            
             time_spent_in_prev_window = time.time() - time_start
             hawk_track.set_window_duration(active_window, time_spent_in_prev_window)
             # Update start time and active window
             time_start = time.time()
         os.system("cls")
-        hawk_track.info_session()       
+        hawk_track.info_session()
         hawk_track.save_session_info()
         print("session info saved...")
         active_window = new_active_window
@@ -197,10 +206,7 @@ def main():
     hawk_track.load_session_info()
     hawk_track.start_session()
 
-    background_thread = threading.Thread(
-        target=run_background, args=(hawk_track,)
-
-    )
+    background_thread = threading.Thread(target=run_background, args=(hawk_track,))
     background_thread.start()
 
     monitor_keystrokes(hawk_track)
