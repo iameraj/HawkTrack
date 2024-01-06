@@ -14,24 +14,18 @@ timezone_obj = pytz.timezone("America/Chicago")
 
 Header = """
 
+     __  __     ______     __     __     __  __    
+    /\ \_\ \   /\  __ \   /\ \  _ \ \   /\ \/ /    
+    \ \  __ \  \ \  __ \  \ \ \/ ".\ \  \ \  _"-.  
+     \ \_\ \_\  \ \_\ \_\  \ \__/".~\_\  \ \_\ \_\ 
+      \/_/\/_/   \/_/\/_/   \/_/   \/_/   \/_/\/_/ 
 
+     ______   ______     ______     ______     __  __    
+    /\__  _\ /\  == \   /\  __ \   /\  ___\   /\ \/ /    
+    \/_/\ \/ \ \  __<   \ \  __ \  \ \ \____  \ \  _"-.  
+       \ \_\  \ \_\ \_\  \ \_\ \_\  \ \_____\  \ \_\ \_\ 
+        \/_/   \/_/ /_/   \/_/\/_/   \/_____/   \/_/\/_/ 
 
-
- __  __     ______     __     __     __  __    
-/\ \_\ \   /\  __ \   /\ \  _ \ \   /\ \/ /    
-\ \  __ \  \ \  __ \  \ \ \/ ".\ \  \ \  _"-.  
- \ \_\ \_\  \ \_\ \_\  \ \__/".~\_\  \ \_\ \_\ 
-  \/_/\/_/   \/_/\/_/   \/_/   \/_/   \/_/\/_/ 
-                                               
- ______   ______     ______     ______     __  __    
-/\__  _\ /\  == \   /\  __ \   /\  ___\   /\ \/ /    
-\/_/\ \/ \ \  __<   \ \  __ \  \ \ \____  \ \  _"-.  
-   \ \_\  \ \_\ \_\  \ \_\ \_\  \ \_____\  \ \_\ \_\ 
-    \/_/   \/_/ /_/   \/_/\/_/   \/_____/   \/_/\/_/ 
-
-
-        
-                                      ~ by MerajS
 """
 
 
@@ -46,23 +40,27 @@ class HawkTrack:
 
         os.system("cls")
         print(Style.BRIGHT + Fore.GREEN + Header + Style.RESET_ALL)
-        print(Style.DIM + "Your personal performance tracker :)\n" + Style.RESET_ALL)
-        self.user_name = input("Enter your name: ") or "User"
+        print(Style.DIM + "\tYour personal performance tracker :)\n" + Style.RESET_ALL)
+        self.user_name = input("\tEnter your name: ") or "User"
 
     def start_session(self):
         os.system("cls")
         today_date = datetime.now(timezone_obj).strftime("%d %b %Y")
         if self.session_id == today_date:
-            print("Continuing session ", self.session_id)
+            print(
+                Style.BRIGHT + "\n\nContinuing session ",
+                self.session_id + Style.RESET_ALL,
+            )
             _ = input("press ENTER To proceed...")
             self.recording = True
             self.save_session_info()
         else:
             os.system("cls")
             print(
-                "\nYour previous session ",
+                Style.BRIGHT + "\n\nYour previous session ",
                 self.session_id,
                 "- UTC-6 has expired starting a new session.\n",
+                " " + Style.RESET_ALL,
             )
 
             self.session_id = today_date
@@ -83,18 +81,19 @@ class HawkTrack:
                     file,
                 )
             print(
-                "\nYour session for ",
+                Style.BRIGHT + "\nYour session for ",
                 today_date,
                 " - Central Time Zone (CT)/UTC-6  has started",
+                " " + Style.RESET_ALL,
             )
             _ = input("press ENTER To proceed...")
 
     def info_session(self):
-        if self.recording:
+        try:
             self.display_session_info()
             self.display_window_info()
-        else:
-            print("No active session.")
+        except:
+            print("")
 
     def save_session_info(self):
         session_info = {
@@ -119,19 +118,13 @@ class HawkTrack:
     def get_active_window_name(self):
         try:
             active_window = gw.getActiveWindow().title
-            application_mapping = {
-                "Teams": "Teams",
-                "Visual Studio Code": "Visual Studio Code",
-                "Google Chrome": "Google Chrome",
-                "Microsoft Edge": "Microsoft Edge",
-                "Sticky Notes": "Sticky Notes",
-            }
 
             keying_applications = [
                 "OCR",
                 "Classification",
                 "Credit Card",
                 "Handprint",
+                "Easy",
                 "Email",
                 "MICR",
                 "Mark Sense",
@@ -144,11 +137,7 @@ class HawkTrack:
                 for app in keying_applications:
                     if app in active_window:
                         return app + " Keying"
-            else:
-                for key, value in application_mapping.items():
-                    if key in active_window:
-                        return value
-
+                return "N/A Keying"
             return "Others"
 
         except:
@@ -197,7 +186,6 @@ class HawkTrack:
 
         total_keystrokes_count = 0
         counter = 0
-        length = len(self.keystrokes)
         total_time = 0
 
         for window_name, keystrokes_count in self.keystrokes.items():
@@ -216,10 +204,22 @@ class HawkTrack:
                         "{:,}".format(col2),
                         self.format_time(col3),
                         round(col4),
-                    ],
-                    divider=counter == len(self.keystrokes) - 1,
+                    ]
                 )
-            counter = counter + 1
+
+        table.add_row(
+            [
+                "Others",
+                self.keystrokes.get("Others", 0),
+                self.format_time(self.durations.get("Others", 1)),
+                round(
+                    self.keystrokes.get("Others", 0)
+                    / self.durations.get("Others", 1)
+                    * 3600
+                ),
+            ],
+            divider=True,
+        )
 
         avg_speed = str(round(total_keystrokes_count / total_time * 3600))
         table.add_row(
