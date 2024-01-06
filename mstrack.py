@@ -25,12 +25,9 @@ class HawkTrack:
         today_date = datetime.now(timezone_obj).strftime("%d %b %Y")
         if self.session_id == today_date:
             print("Continuing sessions ", self.session_id)
-            password = input("Enter password: ")
-            # Validate password and start recording if valid
-            if self.validate_password(password):
-                self.recording = True
-                print("Session is being recorded...")
-                self.save_session_info()
+            _ = input("press ENTER To proceed...")
+            self.recording = True
+            self.save_session_info()
         else:
             os.system("cls")
             print(
@@ -62,9 +59,6 @@ class HawkTrack:
                 " - Central Time Zone (CT)/UTC-6  has started",
             )
             _ = input("press ENTER To proceed...")
-
-    def validate_password(self, password):
-        return True
 
     def info_session(self):
         if self.recording:
@@ -175,24 +169,29 @@ def run_background(hawk_track):
     duration info, it also maintains the
     time record of each window
     """
-    time_start = time.time()
-
-    active_window = hawk_track.get_active_window_name()
-
     while hawk_track.recording:
-        new_active_window = hawk_track.get_active_window_name()
-
-        if new_active_window != active_window:
-            time_spent_in_prev_window = time.time() - time_start
-            hawk_track.set_window_duration(active_window, time_spent_in_prev_window)
-            # Update start time and active window
-            time_start = time.time()
         os.system("cls")
         hawk_track.info_session()
         hawk_track.save_session_info()
         print("session info saved...")
-        active_window = new_active_window
         time.sleep(1)
+
+
+def update_duration(hawk_track):
+    """
+    I want to preserve run_background funtion for saving files only
+    so The window wise will be updated here and save file function will
+    run in another thread
+    """
+    time_start = time.time()
+    active_window = hawk_track.get_active_window_name()
+
+    while True:
+        time_spent = time.time() - time_start
+        hawk_track.set_window_duration(active_window, time_spent)
+        time_start = time.time()
+        active_window = hawk_track.get_active_window_name()
+        time.sleep(0.1)
 
 
 def monitor_keystrokes(hawk_track):
@@ -207,6 +206,8 @@ def main():
     hawk_track.start_session()
 
     background_thread = threading.Thread(target=run_background, args=(hawk_track,))
+    duration_updating = threading.Thread(target=update_duration, args=(hawk_track,))
+    duration_updating.start()
     background_thread.start()
 
     monitor_keystrokes(hawk_track)
