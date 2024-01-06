@@ -4,11 +4,35 @@ import json
 import keyboard
 import pygetwindow as gw
 from datetime import datetime, timedelta
-from prettytable import PrettyTable
+from prettytable import PrettyTable, SINGLE_BORDER
+from colorama import Fore, Back, Style
 import os
 import pytz
 
 timezone_obj = pytz.timezone("America/Chicago")
+
+
+Header = """
+
+
+
+
+ __  __     ______     __     __     __  __    
+/\ \_\ \   /\  __ \   /\ \  _ \ \   /\ \/ /    
+\ \  __ \  \ \  __ \  \ \ \/ ".\ \  \ \  _"-.  
+ \ \_\ \_\  \ \_\ \_\  \ \__/".~\_\  \ \_\ \_\ 
+  \/_/\/_/   \/_/\/_/   \/_/   \/_/   \/_/\/_/ 
+                                               
+ ______   ______     ______     ______     __  __    
+/\__  _\ /\  == \   /\  __ \   /\  ___\   /\ \/ /    
+\/_/\ \/ \ \  __<   \ \  __ \  \ \ \____  \ \  _"-.  
+   \ \_\  \ \_\ \_\  \ \_\ \_\  \ \_____\  \ \_\ \_\ 
+    \/_/   \/_/ /_/   \/_/\/_/   \/_____/   \/_/\/_/ 
+
+
+        
+                                      ~ by MerajS
+"""
 
 
 class HawkTrack:
@@ -20,11 +44,16 @@ class HawkTrack:
         self.durations = {}
         self.start_time = None
 
+        os.system("cls")
+        print(Style.BRIGHT + Fore.GREEN + Header + Style.RESET_ALL)
+        print(Style.DIM + "Your personal performance tracker :)\n" + Style.RESET_ALL)
+        self.user_name = input("Enter your name: ") or "User"
+
     def start_session(self):
         os.system("cls")
         today_date = datetime.now(timezone_obj).strftime("%d %b %Y")
         if self.session_id == today_date:
-            print("Continuing sessions ", self.session_id)
+            print("Continuing session ", self.session_id)
             _ = input("press ENTER To proceed...")
             self.recording = True
             self.save_session_info()
@@ -94,20 +123,36 @@ class HawkTrack:
                 "Teams": "Teams",
                 "Visual Studio Code": "Visual Studio Code",
                 "Google Chrome": "Google Chrome",
-                "Keying": "Keying",
                 "Microsoft Edge": "Microsoft Edge",
+                "Sticky Notes": "Sticky Notes",
             }
 
-            for key, value in application_mapping.items():
-                if key in active_window:
-                    return value
+            keying_applications = [
+                "OCR",
+                "Classification",
+                "Credit Card",
+                "Handprint",
+                "Email",
+                "MICR",
+                "Mark Sense",
+                "Checks",
+                "COFA",
+                "Address",
+            ]
 
-            # If no match found, return the other window title
-            return "Other"
+            if "Keying" in active_window:
+                for app in keying_applications:
+                    if app in active_window:
+                        return app + " Keying"
+            else:
+                for key, value in application_mapping.items():
+                    if key in active_window:
+                        return value
 
-        except Exception as e:
-            print(f"Error getting active window: {e}")
-            return None
+            return "Others"
+
+        except:
+            return "Others"
 
     def load_session_info(self):
         try:
@@ -131,8 +176,8 @@ class HawkTrack:
 
     def display_session_info(self):
         elapsed_time = timedelta(seconds=int(time.time() - self.start_time))
-        print(f"Session info for {self.session_id}:")
-        print(f"Elapsed Time: {str(elapsed_time)}")
+        print(Style.DIM + f"Session info for {self.session_id}:" + Style.RESET_ALL)
+        print(Style.DIM + f"Elapsed Time: {str(elapsed_time)}" + Style.RESET_ALL)
         print("")
 
     def display_window_info(self):
@@ -141,47 +186,86 @@ class HawkTrack:
             return
 
         table = PrettyTable()
-        table.field_names = ["Window Name", "Keystrokes Count", "Time Spent"]
+        table.title = "State-Wise data of " + self.user_name + " on " + self.session_id
+
+        table.field_names = [
+            Style.BRIGHT + Fore.GREEN + "Window Name",
+            "Keystrokes Count",
+            "Time Spent",
+            "Speed" + Style.RESET_ALL,
+        ]
+
+        total_keystrokes_count = 0
+        counter = 0
+        length = len(self.keystrokes)
+        total_time = 0
 
         for window_name, keystrokes_count in self.keystrokes.items():
-            table.add_row(
-                [
-                    window_name,
-                    keystrokes_count,
-                    self.format_time(self.durations.get(window_name, 1)),
-                ]
-            )
+            col1 = window_name
+            col2 = keystrokes_count
+            col3 = self.durations.get(window_name, 1)
+            col4 = (keystrokes_count / col3) * 3600
 
-        print("Window-wise keystrokes count:")
+            if col1 != "Others":
+                total_keystrokes_count += col2
+                total_time += col3
+
+                table.add_row(
+                    [
+                        Style.BRIGHT + col1 + Style.RESET_ALL,
+                        "{:,}".format(col2),
+                        self.format_time(col3),
+                        round(col4),
+                    ],
+                    divider=counter == len(self.keystrokes) - 1,
+                )
+            counter = counter + 1
+
+        avg_speed = str(round(total_keystrokes_count / total_time * 3600))
+        table.add_row(
+            [
+                Style.BRIGHT + Fore.GREEN + "Total",
+                total_keystrokes_count,
+                self.format_time(total_time),
+                avg_speed + Style.RESET_ALL,
+            ]
+        )
+        table.set_style(SINGLE_BORDER)
         print(table)
 
     def format_time(self, duration):
         if None:
             return 0
         else:
-            return timedelta(seconds=round(duration))
+            hours, remainder = divmod(duration, 3600)
+            minutes, seconds = divmod(remainder, 60)
+
+            formatted_time = ""
+            if hours > 0:
+                formatted_time += f"{int(hours)} hrs "
+            if minutes > 0:
+                formatted_time += f"{int(minutes)} mins "
+            if seconds > 0 or not formatted_time:
+                formatted_time += f"{int(seconds)} secs"
+
+            return formatted_time.strip()
 
 
 def run_background(hawk_track):
     """
-    This function runs in the background
-    to save the session keystrokes info  and
-    duration info, it also maintains the
-    time record of each window
+    Saves and displays sessions till the application is running
     """
-    while hawk_track.recording:
+    while True:
         os.system("cls")
         hawk_track.info_session()
         hawk_track.save_session_info()
-        print("session info saved...")
-        time.sleep(1)
+        print(Style.DIM + "session info saved...")
+        time.sleep(2)
 
 
 def update_duration(hawk_track):
     """
-    I want to preserve run_background funtion for saving files only
-    so The window wise will be updated here and save file function will
-    run in another thread
+    Updates the period of time for each window
     """
     time_start = time.time()
     active_window = hawk_track.get_active_window_name()
@@ -196,7 +280,7 @@ def update_duration(hawk_track):
 
 def monitor_keystrokes(hawk_track):
     keyboard.hook(hawk_track.on_key_event)
-    keyboard.wait("ctrl+esc")  # Wait for the user to press the escape key
+    keyboard.wait("ctrl+esc")
     keyboard.unhook_all()
 
 
