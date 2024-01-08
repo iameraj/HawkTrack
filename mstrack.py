@@ -1,7 +1,7 @@
 import threading
 import time
 import json
-import keyboard
+from pynput.keyboard import Listener
 import pygetwindow as gw
 from datetime import datetime, timedelta
 from prettytable import PrettyTable, SINGLE_BORDER
@@ -36,14 +36,17 @@ class HawkTrack:
         self.keystrokes = {}
         self.durations = {}
         self.start_time = None
-        self.session_file_path = "¯\_(ツ)_/¯"
+        self.session_file_path = "?"
 
         os.system("cls")
         print(Style.BRIGHT + Fore.GREEN + Header + Style.RESET_ALL)
-        print(Style.DIM + "\t\t#Your personal performance tracker" + Style.RESET_ALL)
-        print(Style.DIM + "\t\t\t\t\t\t~by Meraj\n" + Style.RESET_ALL)
+        print(Style.DIM + "\t\t#Your personal performance tracker\n" + Style.RESET_ALL)
 
-        self.user_name = input("\tEnter your name: ") or "User"
+        try:
+            self.user_name = os.getenv("USERNAME")
+            _ = input(f"User: {self.user_name} \nPress enter to procced...")
+        except:
+            self.user_name = input("\tEnter your name: ") or "User"
 
     def start_session(self):
         os.system("cls")
@@ -70,7 +73,7 @@ class HawkTrack:
             self.recording = True
             self.keystrokes = {}
             self.durations = {}
-
+            
             with open(self.session_file, "w") as file:
                 json.dump(
                     {
@@ -92,9 +95,6 @@ class HawkTrack:
 
         self.session_file_path = os.path.abspath(self.session_file)
 
-    def info_session(self):
-        self.display_window_info()
-
     def save_session_info(self):
         session_info = {
             "session_id": self.session_id,
@@ -107,21 +107,28 @@ class HawkTrack:
             json.dump(session_info, file)
 
     def on_key_event(self, event):
-        if event.event_type == keyboard.KEY_UP:
-            window_name = self.get_active_window_name()
+        try:
+            window_name = self.get_active_window_name(real=True)
             if window_name:
-                self.keystrokes[window_name] = self.keystrokes.get(window_name, 0) + 1
+                if window_name == "Account Lookup":
+                    pass
+                else:
+                    self.keystrokes[window_name] = (
+                        self.keystrokes.get(window_name, 0) + 1
+                    )
                 print(
-                    Style.DIM + "\t-key {",
-                    event.name,
-                    "} was pressed in: ",
+                    Style.DIM + "\t-",
+                    event,
+                    " was pressed in: ",
                     window_name,
                 )
+        except:
+            print(Fore.RED + "Failed to capture Keystroke" + Style.RESET_ALL)
 
     def set_window_duration(self, window_name, duration):
         self.durations[window_name] = self.durations.get(window_name, 0) + duration
 
-    def get_active_window_name(self):
+    def get_active_window_name(self, real=False):
         try:
             active_window = gw.getActiveWindow().title
 
@@ -134,13 +141,15 @@ class HawkTrack:
                 "Email",
                 "MICR",
                 "Mark Sense",
-                "Checks",
+                "Check",
                 "COFA",
                 "Address",
             }
             application_mapping = {"Teams", "Google Chrome", "Microsoft Edge", "Sticky"}
 
             if "Account Lookup" in active_window:
+                if real:
+                    return "Account Lookup"
                 return "Handprint Keying"
 
             if "Keying" in active_window:
@@ -180,16 +189,15 @@ class HawkTrack:
 
     def display_session_info(self):
         elapsed_time = timedelta(seconds=int(time.time() - self.start_time))
-        line1 = "".join(
-            [Style.DIM, f"Session info for {self.session_id}:", Style.RESET_ALL, "\n"]
-        )
-        line2 = "".join(
-            [Style.DIM, f"Elapsed Time: {str(elapsed_time)}", Style.RESET_ALL]
+
+        session_info = (
+            Style.DIM + f"Session info for {self.session_id}:\n"
+            f"Elapsed Time: {elapsed_time}" + Style.RESET_ALL
         )
 
         os.system("cls")
-        print(line1, line2)
-        print("")
+        print(session_info)
+        print()
 
     def display_window_info(self):
         table = PrettyTable()
@@ -250,8 +258,8 @@ class HawkTrack:
         print(table)
 
     def format_time(self, duration):
-        if None:
-            return 0
+        if duration is None:
+            return 1
         else:
             hours, remainder = divmod(duration, 3600)
             minutes, seconds = divmod(remainder, 60)
@@ -273,7 +281,7 @@ def run_background(hawk_track):
     """
     while True:
         hawk_track.save_session_info()
-        print(Style.BRIGHT + "session info saved.👍" + Style.RESET_ALL)
+        print(Style.BRIGHT + "\tsession info saved.👍" + Style.RESET_ALL)
         time.sleep(5)
 
 
@@ -282,10 +290,11 @@ def show_data(hawk_track):
     Displays data on screen
     """
     while True:
-        hawk_track.info_session()
+        hawk_track.display_window_info()
         print(
             Style.DIM
-            + f"session data is being stored at {hawk_track.session_file_path}"
+            + f"session data is being stored at {hawk_track.session_file_path}" 
+            + Style.RESET_ALL
         )
         time.sleep(0.9)
 
@@ -306,9 +315,9 @@ def update_duration(hawk_track):
 
 
 def monitor_keystrokes(hawk_track):
-    keyboard.hook(hawk_track.on_key_event)
-    keyboard.wait("ctrl+esc")
-    keyboard.unhook_all()
+    listener = Listener(on_release=hawk_track.on_key_event)
+
+    listener.start()
 
 
 def main():
@@ -319,15 +328,16 @@ def main():
     background_thread = threading.Thread(target=run_background, args=(hawk_track,))
     duration_updating = threading.Thread(target=update_duration, args=(hawk_track,))
     display_data = threading.Thread(target=show_data, args=(hawk_track,))
+    monitor = threading.Thread(target=monitor_keystrokes, args=(hawk_track,))
 
+    monitor.start()
     duration_updating.start()
     background_thread.start()
     display_data.start()
 
-    monitor_keystrokes(hawk_track)
-
-    hawk_track.info_session()
-
 
 if __name__ == "__main__":
-    main()
+    try:
+        main()
+    except KeyboardInterrupt:
+        pass
